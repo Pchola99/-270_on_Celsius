@@ -3,6 +3,7 @@ package core;
 import core.EventHandling.EventHandler;
 import core.UI.GUI.Menu.MouseCalibration;
 import core.math.Point2i;
+import core.math.Vector2f;
 import org.lwjgl.glfw.GLFWCursorPosCallback;
 import org.lwjgl.glfw.GLFWKeyCallback;
 import org.lwjgl.glfw.GLFWMouseButtonCallback;
@@ -24,7 +25,7 @@ public class InputHandler {
     private final Point2i mousePos = new Point2i();
 
     private long lastMouseMoveTimestamp;
-    private double scrollOffset = 1;
+    private float scrollOffset = 1;
 
     public InputHandler() {
         justPressed = createBitSet(PRESSED_ARRAY_SIZE);
@@ -82,7 +83,7 @@ public class InputHandler {
         glfwSetScrollCallback(glfwWindow, addResource(new GLFWScrollCallback() {
             @Override
             public void invoke(long window, double xoffset, double yoffset) {
-                scrollOffset = Math.clamp(yoffset + scrollOffset, 0, 50);
+                scrollOffset = Math.clamp((float)yoffset + scrollOffset, 0, 50);
             }
         }));
     }
@@ -96,7 +97,7 @@ public class InputHandler {
 
     // region Public API
 
-    public double getScrollOffset() {
+    public float getScrollOffset() {
         return scrollOffset;
     }
 
@@ -104,6 +105,16 @@ public class InputHandler {
         return lastMouseMoveTimestamp;
     }
 
+    private final Vector2f mouseWorldPos = new Vector2f();
+
+    // Позиция в мире
+    public Vector2f mouseWorldPos() {
+        // Поскольку мы в праве менять проекция камеры, то и значение worldPos() всегда должно быть актуальным
+        mouseWorldPos.set(mousePos.x, mousePos.y);
+        return Global.camera.unproject(mouseWorldPos);
+    }
+
+    // Позиция на экране
     public Point2i mousePos() {
         return mousePos;
     }
