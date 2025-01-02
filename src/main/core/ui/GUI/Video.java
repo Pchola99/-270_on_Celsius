@@ -1,4 +1,4 @@
-package core.UI.GUI;
+package core.ui.GUI;
 
 import core.EventHandling.Logging.Logger;
 import core.assets.TextureLoader;

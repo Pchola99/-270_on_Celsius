@@ -3,7 +3,6 @@ package core;
 import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Config;
 import core.EventHandling.Logging.Logger;
-import core.UI.GUI.Menu.Main;
 import core.Utils.NativeResources;
 import core.World.Textures.TextureDrawing;
 import core.assets.TextureLoader;
@@ -83,6 +82,7 @@ public class Window extends Application {
         // glEnable(GL_DEBUG_OUTPUT);
         // GLUtil.setupDebugMessageCallback();
 
+        scene = new Scene();
         EventHandler.init();
         try {
             TextureLoader.preLoadResources();
@@ -111,7 +111,7 @@ public class Window extends Application {
         batch = new SortingBatch(4 * 1024 * 1024, 1024 * 8, 1024 * 8);
         batch.matrix(camera.projection);
 
-        Main.create();
+        UI.mainMenu().show();
 
         addListener(new AutoSaveListener());
 
@@ -158,8 +158,6 @@ public class Window extends Application {
 
             glfwSwapBuffers(glfwWindow);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            EventHandler.addDebugValue(true, "Drawing fps: ", "DrawingFPS");
         }
 
         glfwTerminate();

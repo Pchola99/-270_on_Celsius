@@ -5,7 +5,6 @@ import core.math.MathUtil;
 
 import static core.Global.atlas;
 import static core.Global.batch;
-import static org.lwjgl.opengl.GL11.glLineWidth;
 
 public final class Fill {
     private Fill() {
@@ -125,12 +124,10 @@ public final class Fill {
     }
 
     public static void rect(float x, float y, float width, float height, SimpleColor color) {
-        batch.color(color);
-        batch.draw(atlas.byPath("World/white.png"), x, y, width, height);
-        batch.resetColor();
+        batch.draw(atlas.byPath("World/white.png"), color, x, y, width, height);
     }
 
-    public static void circle(float x, float y, float radius) {
-        batch.draw(atlas.byPath("World/circle.png"), x, y, radius, radius);
+    public static void circle(float x, float y, float radius, SimpleColor color) {
+        batch.draw(atlas.byPath("World/circle.png"), color, x, y, radius, radius);
     }
 }

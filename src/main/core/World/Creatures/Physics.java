@@ -8,7 +8,6 @@ import core.World.Creatures.Player.Inventory.Inventory;
 import core.World.Creatures.Player.Inventory.Items.Weapons.Weapons;
 import core.World.HitboxMap;
 import core.World.Saves;
-import core.World.StaticWorldObjects.StaticObjectsConst;
 import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.Textures.TextureDrawing;
 import core.World.WorldGenerator;
@@ -30,6 +29,8 @@ public class Physics {
     private static boolean stop = false;
     public static int lastSpeed = physicsSpeed;
 
+    static int fpsMeasurement, fps;
+
     public static void restart() {
         physicsSpeed = 400;
         stop = false;
@@ -45,17 +46,22 @@ public class Physics {
 
             long lastUpdate = System.nanoTime();
 
+            EventHandler.setDebugValue(() -> "[Physics] fps: " + fps);
+
             while (!glfwWindowShouldClose(glfwWindow)) {
                 if (physicsSpeed != 0 && System.nanoTime() - lastUpdate >= 1.0 / physicsSpeed * 1000000000) {
+                    fps = fpsMeasurement;
+                    fpsMeasurement = 0;
+
                     updatePhys();
                     updateWorldInteractions();
 
-                    EventHandler.addDebugValue(true, "Physics fps: ", "PhysicsFPS");
                     lastUpdate = System.nanoTime();
                 } else {
                     // Без этой штуки мой ноутбук превращается в обогреватель
                     Thread.yield();
                 }
+                fpsMeasurement++;
             }
         }).start();
     }

@@ -2,7 +2,7 @@ package core.World.StaticWorldObjects.Structures;
 
 import core.EventHandling.Logging.Config;
 import core.Global;
-import core.UI.Sounds.Sound;
+import core.ui.Sounds.Sound;
 import core.Utils.ArrayUtils;
 import core.World.Creatures.Player.Inventory.Inventory;
 import core.World.Creatures.Player.Inventory.InventoryEvents;
@@ -231,9 +231,11 @@ public class Factories implements StaticBlocksEvents, InventoryEvents {
 
                     drawText((x + (i * 54)) + playerSize + 31, y + 3, countInCell > 9 ? "9+" : String.valueOf(countInCell), SimpleColor.DIRTY_BRIGHT_BLACK);
 
-                    batch.scale(zoom);
-                    batch.draw(items[i].texture, ((x + (i * 54)) + playerSize + 5), (y + 15));
-                    batch.resetScale();
+                    int finalI = i;
+                    batch.pushState(() -> {
+                        batch.scale(zoom);
+                        batch.draw(items[finalI].texture, ((x + (finalI * 54)) + playerSize + 5), (y + 15));
+                    });
                 }
             }
         }
