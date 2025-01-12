@@ -9,6 +9,7 @@ import core.Utils.Sized;
 import core.Window;
 import core.World.Creatures.DynamicWorldObjects;
 import core.World.Creatures.Player.Inventory.Inventory;
+import core.World.Creatures.Player.Inventory.Items.Weapons.Weapons;
 import core.World.StaticWorldObjects.StaticWAnimations;
 import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.StaticWorldObjects.Structures.Factories;
@@ -32,6 +33,7 @@ import static core.ui.GUI.Video.byteBuffer;
 import static core.ui.GUI.Video.video;
 import static core.World.Creatures.Player.Player.*;
 import static core.World.StaticWorldObjects.StaticWorldObjects.*;
+import static core.World.StaticWorldObjects.Structures.Factories.updateFactoriesOutput;
 import static core.World.Weather.Sun.updateSun;
 import static core.World.WorldGenerator.*;
 
@@ -207,6 +209,11 @@ public class TextureDrawing {
     }
 
     public static void updateStaticObj() {
+
+        updateInventoryInteraction();
+        Weapons.updateAmmo();
+        updateFactoriesOutput();
+
         Factories.update();
 
         batch.pushState(() -> {

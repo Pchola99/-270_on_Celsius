@@ -492,7 +492,8 @@ public class WorldGenerator {
         Inventory.registerListener(new ElectricCables());
         Inventory.registerListener(new Factories());
         Sun.createSun();
-        Physics.initPhysics();
+        Inventory.create();
+        Physics.resumePhysics();
         if (generateCreatures) {
             CreaturesGenerate.initGenerating();
         }

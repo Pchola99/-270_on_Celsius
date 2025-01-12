@@ -4,6 +4,7 @@ import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Logger;
 import core.UI;
 import core.Utils.SimpleColor;
+import core.World.Creatures.Physics;
 import core.World.Saves;
 import core.ui.Dialog;
 import core.ui.Styles;
@@ -34,6 +35,7 @@ public class Pause extends Dialog {
 
     private void continueBtn() {
         hide();
+        Physics.resumePhysics();
         UI.settings().hide();
     }
 
