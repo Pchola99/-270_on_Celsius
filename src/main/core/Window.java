@@ -5,14 +5,14 @@ import core.EventHandling.Logging.Config;
 import core.EventHandling.Logging.Logger;
 import core.UI.GUI.Menu.Main;
 import core.Utils.NativeResources;
+import core.Utils.SimpleColor;
+import core.World.Creatures.Physics;
 import core.World.Textures.TextureDrawing;
-import core.assets.AssetsManager;
 import core.assets.TextureLoader;
-import core.g2d.Atlas;
-import core.g2d.Camera2;
-import core.g2d.Font;
-import core.g2d.SortingBatch;
+import core.g2d.*;
 import core.graphic.Layer;
+import core.math.Rectangle;
+import core.math.Vector2f;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.glfw.GLFWWindowFocusCallback;
@@ -21,9 +21,12 @@ import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
 
+import static core.EventHandling.EventHandler.debugLevel;
 import static core.EventHandling.Logging.Logger.log;
 import static core.Global.*;
 import static core.Utils.NativeResources.addResource;
+import static core.World.Textures.TextureDrawing.blockSize;
+import static core.World.WorldGenerator.DynamicObjects;
 import static core.assets.TextureLoader.BufferedImageEncoder;
 import static core.assets.TextureLoader.readImage;
 import static org.lwjgl.glfw.GLFW.*;
@@ -125,48 +128,109 @@ public class Window extends Application {
         glClearColor(206f / 255f, 246f / 255f, 1.0f, 1.0f);
 
         while (!glfwWindowShouldClose(glfwWindow)) {
-            updateTime();
-
-            input.update();
-            for (ApplicationListener listener : listeners) {
-                try {
-                    listener.update();
-                } catch (Exception e) {
-                    Logger.printException("Failed to update ApplicationListener: " + listener, e);
-                }
-            }
-
-            EventHandler.update();
-
-            scheduler.executeAll();
-
-            TextureDrawing.updateVideo();
-            batch.z(Layer.STATIC_OBJECTS);
-
-            if (start) {
-                TextureDrawing.updateStaticObj();
-                batch.z(Layer.DYNAMIC_OBJECTS);
-                TextureDrawing.updateDynamicObj();
-            } else {
-                batch.draw(assets.getTextureByPath(assets.assetsDir("World/Other/background.png")));
-            }
-
-            batch.z(Layer.GUI);
-            camera.setToOrthographic(camera.width(), camera.height());
-            batch.matrix(camera.projection);
-            TextureDrawing.updateGUI();
-            batch.flush();
+            gameIteration();
 
             glfwSwapBuffers(glfwWindow);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            EventHandler.addDebugValue(true, "Drawing fps: ", "DrawingFPS");
         }
 
         glfwTerminate();
         NativeResources.terminateResources();
-
         batch.close();
-        Logger.logExit(0, "Main thread ending drawing", false);
+    }
+
+    private void gameIteration() {
+        updateTime();
+
+        input.update();
+        for (ApplicationListener listener : listeners) {
+            try {
+                listener.update();
+            } catch (Exception e) {
+                Logger.printException("Failed to update ApplicationListener: " + listener, e);
+            }
+        }
+
+        EventHandler.update();
+
+        scheduler.executeAll();
+
+        TextureDrawing.updateVideo();
+        batch.z(Layer.STATIC_OBJECTS);
+
+        if (start) {
+            Physics.updatePhysics();
+            TextureDrawing.updateStaticObj();
+            batch.z(Layer.DYNAMIC_OBJECTS);
+            TextureDrawing.updateDynamicObj();
+            debugInfo();
+        } else {
+            batch.draw(assets.getTextureByPath(assets.assetsDir("World/Other/background.png")));
+        }
+
+        batch.z(Layer.GUI);
+        camera.setToOrthographic(camera.width(), camera.height());
+        batch.matrix(camera.projection);
+        TextureDrawing.updateGUI();
+        batch.flush();
+    }
+
+    static final Rectangle rect = new Rectangle();
+    static final Vector2f vec = new Vector2f();
+    static final SimpleColor green = SimpleColor.fromRGBA(0, 255, 0, 255);
+    static final SimpleColor red = SimpleColor.fromRGBA(255, 0, 0, 255);
+    static final SimpleColor blue = SimpleColor.fromRGBA(0, 0, 255, 255);
+    static final SimpleColor white = SimpleColor.fromRGBA(255, 255, 255, 255);
+    static final SimpleColor black = SimpleColor.fromRGBA(0, 0, 0, 255);
+
+    private void debugInfo() {
+        if (debugLevel < 2) {
+            return;
+        }
+
+        var player = DynamicObjects.getFirst();
+        var size = player.getTexture();
+
+        player.getHitboxTo(rect);
+        var center = rect.getCenterTo(vec);
+
+        int cx = (int) Math.floor(center.x / blockSize);
+        int cy = (int) Math.floor(center.y / blockSize);
+
+        float width = size.width();
+        float height = size.height();
+        int w = (int) Math.ceil(width / blockSize);
+        int h = (int) Math.ceil(height / blockSize);
+
+        int minX = (int) Math.floor(player.getX() / blockSize);
+        int minY = (int) Math.floor(player.getY() / blockSize);
+
+        int maxX = (int) Math.floor((player.getX() + width) / blockSize);
+        int maxY = (int) Math.floor((player.getY() + height) / blockSize);
+
+        TextureDrawing.drawText(player.getX(), player.getY() + size.height() - 32,
+                "Fixture: " + player.hasFixture() + ", Velocity: " + player.velocity, black);
+
+        // Интегрированный прямоугольник, который используется как хитбокс
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                Fill.rectangleBorder(x * blockSize, y * blockSize, blockSize, blockSize, white);
+            }
+        }
+
+        TextureDrawing.drawText(player.getX(), player.getY() + size.height(),
+                "Size: " + w + "x" + h + " (" + size.width() + "x" + size.height() + ")", SimpleColor.DIRTY_BRIGHT_BLACK);
+
+        // Ближайший к центру игрока блок
+        if (false) Fill.rectangleBorder(cx * blockSize, cy * blockSize, blockSize, blockSize, green);
+        // Прямоугольник, который показывает занятое текстурой пространство
+        Fill.rectangleBorder(player.getX(), player.getY(), size.width(), size.height(),  red);
+
+        // Две пересекающиеся перпендикулярные прямые, точкой пересечения которых является центр текстуры
+        batch.color(blue);
+        Fill.lineWidth(1);
+        Fill.line(player.getX() + size.width()/2f, player.getY(), player.getX() + size.width()/2f, player.getY() + size.height());
+        Fill.line(player.getX(), player.getY() + size.height() / 2f, player.getX() + size.width(), player.getY() + size.height() / 2f);
+        batch.resetColor();
     }
 }

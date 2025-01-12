@@ -2,7 +2,6 @@ package core.World.Textures;
 
 import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Config;
-import core.Global;
 import core.UI.GUI.Objects.ButtonObject;
 import core.UI.GUI.Objects.PanelObject;
 import core.UI.GUI.Objects.SliderObject;
@@ -14,6 +13,7 @@ import core.Utils.Sized;
 import core.Window;
 import core.World.Creatures.DynamicWorldObjects;
 import core.World.Creatures.Player.Inventory.Inventory;
+import core.World.Creatures.Player.Inventory.Items.Weapons.Weapons;
 import core.World.StaticWorldObjects.StaticWAnimations;
 import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.StaticWorldObjects.Structures.ElectricCables;
@@ -39,6 +39,7 @@ import static core.UI.GUI.Video.byteBuffer;
 import static core.UI.GUI.Video.video;
 import static core.World.Creatures.Player.Player.*;
 import static core.World.StaticWorldObjects.StaticWorldObjects.*;
+import static core.World.StaticWorldObjects.Structures.Factories.updateFactoriesOutput;
 import static core.World.Weather.Sun.updateSun;
 import static core.World.WorldGenerator.*;
 
@@ -82,7 +83,7 @@ public class TextureDrawing {
     }
 
     public static void drawText(float x, float y, String text) {
-        drawText(x, y, text, SimpleColor.fromRGBA(210, 210, 210, 255));
+        drawText(x, y, text, SimpleColor.DEFAULT_TEXT);
     }
 
     public static void drawPrompt(ButtonObject button) {
@@ -217,6 +218,11 @@ public class TextureDrawing {
     }
 
     public static void updateStaticObj() {
+
+        updateInventoryInteraction();
+        Weapons.updateAmmo();
+        updateFactoriesOutput();
+
         Factories.update();
         batch.z(Layer.BACKGROUND);
         updateSun();

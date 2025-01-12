@@ -8,6 +8,7 @@ import core.math.Point2i;
 import java.util.ArrayList;
 import static core.World.StaticWorldObjects.StaticWorldObjects.getResistance;
 import static core.World.StaticWorldObjects.StaticWorldObjects.getType;
+import static core.World.Textures.TextureDrawing.blockSize;
 import static core.World.WorldGenerator.*;
 
 public class HitboxMap {

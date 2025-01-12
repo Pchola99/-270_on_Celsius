@@ -10,6 +10,7 @@ public final class SimpleColor implements Serializable {
     public static final SimpleColor DIRTY_BRIGHT_WHITE = fromRGBA(230, 230, 230, 255);
     public static final SimpleColor DIRTY_BRIGHT_BLACK = fromRGBA(10, 10, 10, 255);
     public static final SimpleColor DIRTY_BLACK = fromRGBA(10, 10, 10, 55);
+    public static final SimpleColor DEFAULT_TEXT = SimpleColor.fromRGBA(210, 210, 210, 255);
 
     private final int value;
 

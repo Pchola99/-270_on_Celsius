@@ -40,8 +40,9 @@ public class Pause {
     public static void toggle() {
         if (!Pause.created) {
             Pause.create();
+            Physics.stopPhysics();
         } else {
-            Pause.delete();
+            continueBtn();
         }
     }
 

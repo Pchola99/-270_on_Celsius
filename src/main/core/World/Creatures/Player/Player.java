@@ -1,6 +1,5 @@
 package core.World.Creatures.Player;
 
-import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Config;
 import core.Utils.SimpleColor;
 import core.World.Creatures.DynamicWorldObjects;
@@ -39,44 +38,6 @@ public class Player {
 
     public static void createPlayer(boolean randomSpawn) {
         DynamicObjects.addFirst(DynamicWorldObjects.createDynamic("player", randomSpawn ? (int) (Math.random() * (SizeX * TextureDrawing.blockSize)) : SizeX * 8f));
-    }
-
-    public static void updatePlayerJump() {
-        if (EventHandler.isKeylogging()) {
-            return;
-        }
-
-        if (input.pressed(GLFW_KEY_SPACE)) {
-            DynamicObjects.getFirst().jump(1.05f);
-        }
-    }
-
-    public static void updatePlayerMove() {
-        // todo тут надо проверять элемент UI на фокусировку, т.е. на порядок отображения (фокусирован = самый последний элемент)
-        if (EventHandler.isKeylogging()) {
-            return;
-        }
-
-        float speed = noClip ? 1.6f : 0.4f;
-        DynamicWorldObjects player = DynamicObjects.getFirst();
-
-        int xf = input.axis(GLFW_KEY_A, GLFW_KEY_D);
-        int yf = input.axis(GLFW_KEY_S, GLFW_KEY_W);
-
-        if (!noClip) {
-            if (xf != 0) {
-                player.setMotionVectorX(speed * xf);
-            }
-            if (yf != 0) {
-                player.setMotionVectorY(speed * yf);
-            }
-        } else {
-            player.setMotionVectorY(0);
-
-            player.setX(player.getX() + speed * xf);
-            player.setY(player.getY() + speed * yf);
-        }
-        EventHandler.putDebugValue(false, "[Player] x: " + player.getX() + ", y: " + player.getY(), "PlayerPos");
     }
 
     public static void updateInventoryInteraction() {
