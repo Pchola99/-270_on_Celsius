@@ -3,6 +3,7 @@ package core.ui.menu;
 import core.EventHandling.Logging.Logger;
 import core.UI;
 import core.Utils.SimpleColor;
+import core.World.Creatures.Physics;
 import core.ui.Dialog;
 import core.ui.Styles;
 
