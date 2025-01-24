@@ -10,14 +10,22 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
 public class Button extends BaseButton<Button> {
     protected final Style.TextButton style;
 
-    protected Button(Group panel, Style.TextButton style) {
-        super(panel);
+    public Button(Group panel, Style.TextButton style) {
+        super(panel, style.textStyle);
         this.style = style;
     }
 
     @Override
-    public void update() {
-        if (!visible) {
+    protected void resize() {
+        if ((flags & (FLAG_X_CHANGED | FLAG_Y_CHANGED)) != 0) {
+            name.setPosition(x + style.textOffsetX, y + style.textOffsetY);
+        }
+    }
+
+    @Override
+    public void updateThis() {
+        name.update();
+        if (!visible()) {
             return;
         }
         if (!isClickable) {
@@ -36,10 +44,6 @@ public class Button extends BaseButton<Button> {
 
     @Override
     public void draw() {
-        if (!visible) {
-            return;
-        }
-
         var backgroundColor = color;
         if (backgroundColor == null) backgroundColor = style.backgroundColor;
 
@@ -56,9 +60,19 @@ public class Button extends BaseButton<Button> {
                 Fill.rect(x, y, width, height, disabledColor);
             }
         }
-        if (name != null) {
-            drawText(x + 20, y + height / 2.8f, name);
+        if (name.visible()) {
+            name.draw();
         }
         drawPrompt(this);
+    }
+
+    @Override
+    public float getPrefWidth() {
+        return Math.max(style.prefWidth, name.width);
+    }
+
+    @Override
+    public float getPrefHeight() {
+        return Math.max(style.prefHeight, name.height);
     }
 }

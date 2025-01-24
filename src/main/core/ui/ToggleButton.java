@@ -12,15 +12,24 @@ import static org.lwjgl.glfw.GLFW.GLFW_MOUSE_BUTTON_1;
 public class ToggleButton extends BaseButton<ToggleButton> {
     protected final Style.ToggleButton style;
 
-    protected ToggleButton(Group panel, Style.ToggleButton style) {
-        super(panel);
+    public ToggleButton(Group panel, Style.ToggleButton style) {
+        super(panel, style.textStyle);
         this.style = style;
         setSize(style.width, style.height);
     }
 
     @Override
-    public void update() {
-        if (!visible) {
+    protected void resize() {
+        if ((flags & (FLAG_X_CHANGED | FLAG_Y_CHANGED)) != 0) {
+            float checkmarkOffsetX = style.borderOffset*2 + style.maxCheckmarkWidth();
+            name.setPosition(x + checkmarkOffsetX + style.textOffsetX, y + style.textOffsetY);
+        }
+    }
+
+    @Override
+    public void updateThis() {
+        name.update();
+        if (!visible()) {
             return;
         }
         if (!isClickable) {
@@ -38,19 +47,28 @@ public class ToggleButton extends BaseButton<ToggleButton> {
     }
 
     @Override
+    public float getPrefWidth() {
+        return style.borderOffset*2 + style.maxCheckmarkWidth() + name.width;
+    }
+
+    @Override
+    public float getPrefHeight() {
+        return Math.max(style.borderOffset*2 + style.maxCheckmarkHeight(), name.height);
+    }
+
+    @Override
     public void draw() {
-        if (!visible) {
-            return;
-        }
         float offset = style.borderOffset;
         SimpleColor c = color;
         if (c == null) c = style.backgroundColor;
 
-        Fill.rectangleBorder(x - offset, y - offset, width, height, offset, c);
+        Fill.rectangleBorder(x, y, width, height, offset, c);
 
         Drawable tex = isClicked ? style.checkUp : style.checkDown;
-        batch.draw(tex, x, y);
-        drawText(width + x + style.textOffset, y, name);
+        batch.draw(tex, x + offset, y + offset);
+        if (name.visible()) {
+            name.draw();
+        }
 
         drawPrompt(this);
     }

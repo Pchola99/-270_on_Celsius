@@ -16,6 +16,7 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.glfw.GLFWWindowFocusCallback;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL46;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.IOException;
@@ -34,6 +35,36 @@ public class Window extends Application {
     public static boolean start = false, windowFocused = true;
     public static long glfwWindow;
     public static Font defaultFont;
+
+    private static int w, h, f;
+    private static boolean fullscreen;
+
+    public static void toggleFullscreen() {
+        int w, h;
+        int targetFps;
+        long monitor;
+        if (fullscreen) {
+            w = Window.w;
+            h = Window.h;
+            targetFps = Window.f;
+            monitor = MemoryUtil.NULL;
+
+            fullscreen = false;
+        } else {
+            fullscreen = true;
+
+            Window.w = input.getWidth();
+            Window.h = input.getHeight();
+
+            monitor = glfwGetPrimaryMonitor();
+            var mode = glfwGetVideoMode(monitor);
+            w = mode.width();
+            h = mode.height();
+            Window.f = targetFps = mode.refreshRate();
+        }
+        glfwSetWindowMonitor(glfwWindow, monitor, 0, 0, w, h, targetFps);
+    }
+
 
     public void run() {
         init();
@@ -54,16 +85,16 @@ public class Window extends Application {
         }));
 
         switch (System.getenv("XDG_SESSION_TYPE")) {
-            case "wayland" -> {
-                glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
-                glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
-            }
+            // case "wayland" -> {
+            //     glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_WAYLAND);
+            //     glfwInitHint(GLFW_WAYLAND_LIBDECOR, GLFW_WAYLAND_DISABLE_LIBDECOR);
+            // }
             case null, default -> {}
         }
         glfwInit();
         glfwDefaultWindowHints();
 
-        glfwWindow = glfwCreateWindow(defaultWidth, defaultHeight, "-270 on Celsius", glfwGetPrimaryMonitor(), MemoryUtil.NULL);
+        glfwWindow = glfwCreateWindow(defaultWidth, defaultHeight, "-270 on Celsius", /*glfwGetPrimaryMonitor()*/MemoryUtil.NULL, MemoryUtil.NULL);
 
         glfwMakeContextCurrent(glfwWindow);
 
@@ -83,8 +114,11 @@ public class Window extends Application {
         // glEnable(GL_DEBUG_OUTPUT);
         // GLUtil.setupDebugMessageCallback();
 
-        scene = new Scene();
-        EventHandler.init();
+        scene = new Scene(defaultWidth, defaultHeight);
+        input = new InputHandler(defaultWidth, defaultHeight);
+        input.init();
+        input.addListener(scene);
+
         try {
             TextureLoader.preLoadResources();
         } catch (IOException e) {
@@ -98,14 +132,13 @@ public class Window extends Application {
             }
         }));
 
-        input = new InputHandler();
-        input.init();
-
         try {
             atlas = Atlas.load(assets.assetsDir("sprites"));
         } catch (IOException e) {
             Logger.printException("Error when loading texture atlas", e);
         }
+
+        EventHandler.init();
 
         camera = new Camera2();
         camera.setToOrthographic(defaultWidth, defaultHeight);

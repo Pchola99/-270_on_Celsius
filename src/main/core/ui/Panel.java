@@ -1,9 +1,11 @@
 package core.ui;
 
+import core.Global;
 import core.Utils.SimpleColor;
 import core.g2d.Fill;
+import core.ui.layout.Table;
 
-public class Panel extends BaseGroup<Panel> {
+public class Panel extends Table {
     public final Style.Panel style;
 
     public SimpleColor color = Styles.DEFAULT_PANEL_COLOR;
@@ -11,6 +13,7 @@ public class Panel extends BaseGroup<Panel> {
     public Panel(Group parent, Style.Panel style) {
         super(parent);
         this.style = style;
+        margin(style.borderWidth);
     }
 
     public Panel setColor(SimpleColor color) {
@@ -19,23 +22,20 @@ public class Panel extends BaseGroup<Panel> {
     }
 
     @Override
-    public void draw() {
-        if (!visible) {
-            return;
-        }
-        var backgroundColor = color;
-        if (backgroundColor == null) backgroundColor = style.backgroundColor;
+    protected void drawThis() {
 
-        Fill.rect(x, y, width, height, backgroundColor);
+        var b = background;
+        if (b != null) {
+            Global.batch.draw(b, x, y);
+        } else {
+            var backgroundColor = color;
+            if (backgroundColor == null) backgroundColor = style.backgroundColor;
 
-        float borderWidth = style.borderWidth;
-        if (borderWidth != 0) {
-            Fill.rectangleBorder(x, y, width, height, borderWidth, backgroundColor);
-        }
+            Fill.rect(x, y, width, height, backgroundColor);
 
-        if (children != null) {
-            for (Element child : children) {
-                child.draw();
+            float borderWidth = style.borderWidth;
+            if (borderWidth != 0) {
+                Fill.rectangleBorder(x, y, width, height, borderWidth, backgroundColor);
             }
         }
     }

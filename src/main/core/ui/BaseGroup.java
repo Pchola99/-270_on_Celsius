@@ -1,20 +1,20 @@
 package core.ui;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.StringJoiner;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class BaseGroup<G extends BaseElement<G> & Group> extends BaseElement<G> implements Group {
     // TODO специальный лист с защитой от ConcurrentModificationException
-    protected ArrayList<Element> children;
+    protected CopyOnWriteArrayList<Element> children;
 
     protected BaseGroup(Group parent) {
         super(parent);
     }
 
-    private ArrayList<Element> initChildren() {
+    private CopyOnWriteArrayList<Element> initChildren() {
         if (children == null) {
-            children = new ArrayList<>();
+            children = new CopyOnWriteArrayList<>();
         }
         return children;
     }
@@ -38,24 +38,41 @@ public abstract class BaseGroup<G extends BaseElement<G> & Group> extends BaseEl
     }
 
     @Override
-    public void draw() {
-        if (!visible) {
-            return;
+    public void removeAll() {
+        if (children != null) {
+            children.clear();
         }
+    }
+
+    protected void drawThis() {}
+
+    @Override
+    public void draw() {
+        drawThis();
         if (children != null) {
             for (Element child : children) {
-                child.draw();
+                if (child.visible()) {
+                    child.draw();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void preUpdate() {
+        if (children != null) {
+            for (Element child : children) {
+                child.preUpdate();
             }
         }
     }
 
     @Override
     public void update() {
-        if (!visible) {
-            return;
-        }
+        preUpdate();
+        super.update();
         if (children != null) {
-            for (Element child : new ArrayList<>(children)) {
+            for (Element child : children) {
                 child.update();
             }
         }
@@ -74,22 +91,27 @@ public abstract class BaseGroup<G extends BaseElement<G> & Group> extends BaseEl
         return super.hit(hx, hy);
     }
 
-
     @Override
-    public String toString() {
-        return printTree(1);
+    public void onResize(int width, int height) {
+        super.onResize(width, height);
+        if (children != null) {
+            for (Element child : children) {
+                child.onResize(width, height);
+            }
+        }
     }
 
-    protected String printTree(int nesting) {
+    @Override
+    protected String toStringImpl(int indent) {
         StringJoiner ch = new StringJoiner("\n", "\n", "")
                 .setEmptyValue("");
         var children = children();
         for (int i = 0; i < children.size(); i++) {
             Element el = children.get(i);
-            String tab = " ".repeat(nesting);
-            String str = el instanceof BaseGroup<?> d ? d.printTree(nesting + 1) : el.toString();
-            ch.add(tab + i + ": " + str);
+            String tab = " ".repeat(indent);
+            String str = el instanceof BaseElement<?> d ? d.toStringImpl(indent + 1) : el.toString();
+            ch.add(tab + "[" + i + "] " + str);
         }
-        return super.toString() + ch;
+        return super.toStringImpl(indent) + ch;
     }
 }

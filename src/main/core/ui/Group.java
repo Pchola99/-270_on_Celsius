@@ -12,12 +12,11 @@ public interface Group extends Element {
 
     void remove(Element element);
 
+    void removeAll();
+
     // region ковариантное переопределение
     @Override
     Group set(float x, float y, float width, float height);
-
-    @Override
-    Group setSize(float size);
 
     @Override
     Group setSize(float width, float height);
@@ -37,8 +36,9 @@ public interface Group extends Element {
     // endregion
     // region Дополнительные методы
     default Panel addPanel(Style.Panel style, float x, float y, float width, float height) {
-        return add(new Panel(this, style))
-                .set(x, y, width, height);
+        Panel element = new Panel(this, style);
+        element.set(x, y, width, height);
+        return add(element);
     }
 
     default Button addButton(Style.TextButton style, Consumer<Button> onClick) {
@@ -56,21 +56,15 @@ public interface Group extends Element {
                 .onClick(onClick);
     }
 
-    default ImageButton addImageButton(Runnable onClick) {
-        return add(new ImageButton(this))
-                .onClick(onClick);
-    }
-
     default Slider addSlider(int min, int max, Slider.MoveListener onMove) {
         return add(new Slider(this))
                 .setBounds(min, max)
                 .onMove(onMove);
     }
 
-    default ImageElement addImage(float x, float y, Drawable path) {
-        return add(new ImageElement(this))
-                .setPosition(x, y)
-                .setImage(path);
+    default ImageElement addImage(float x, float y, Drawable image) {
+        return add(new ImageElement(this, image))
+                .setPosition(x, y);
     }
     // endregion
 }

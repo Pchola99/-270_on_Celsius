@@ -4,19 +4,12 @@ import core.EventHandling.EventHandler;
 import core.Global;
 import core.g2d.Drawable;
 
-public class ImageButton extends BaseElement<ImageButton> {
+public class ImageButton extends ImageElement {
     public boolean isClickable = true, isClicked;
     public Runnable clickAction;
-    public Drawable image;
 
-    protected ImageButton(Group parent) {
-        super(parent);
-    }
-
-    public ImageButton setImage(Drawable image) {
-        this.image = image;
-        setSize(image);
-        return this;
+    public ImageButton(Group parent, Drawable image) {
+        super(parent, image);
     }
 
     public ImageButton onClick(Runnable clickAction) {
@@ -38,16 +31,6 @@ public class ImageButton extends BaseElement<ImageButton> {
         isClicked = press;
         if (press && clickAction != null) {
             clickAction.run();
-        }
-    }
-
-    @Override
-    public void draw() {
-        if (!visible) {
-            return;
-        }
-        if (image != null) {
-            Global.batch.draw(image, x, y);
         }
     }
 }

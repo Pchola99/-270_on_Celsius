@@ -1,6 +1,5 @@
 package core.ui.menu;
 
-import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Logger;
 import core.UI;
 import core.Utils.SimpleColor;
@@ -17,21 +16,30 @@ import static core.Window.start;
 
 public class MainMenu extends Dialog {
     public MainMenu() {
-        addPanel(Styles.SIMPLE_PANEL, 0, 965, EventHandler.width, 115);
-        addImageButton(this::discordBtn)
-                .setPosition(1830, 990)
-                .setImage(atlas.byPath("UI/discordIcon.png"));
-        addButton(Styles.TEXT_BUTTON, this::exitBtn)
-                .set(822, 990, 240, 65)
-                .setName(getName("Exit"))
-                .setColor(SimpleColor.DIRTY_WHITE);
-        addButton(Styles.TEXT_BUTTON, this::settingsBtn)
-                .set(548, 990, 240, 65)
-                .setName(getName("Settings"))
-                .setColor(SimpleColor.DIRTY_WHITE);
-        addButton(Styles.TEXT_BUTTON, this::playButton)
-                .set(46, 990, 240, 65)
-                .setName(getName("Play"));
+        maximize();
+        top();
+
+        panel(Styles.SIMPLE_PANEL).height(115).growX().with(panel -> {
+            panel.margin(30);
+            panel.button(Styles.TEXT_BUTTON, this::playButton)
+                    .padRight(262)
+                    .with(b -> {
+                        b.setName(getName("Play"));
+                    });
+            panel.button(Styles.TEXT_BUTTON, this::settingsBtn)
+                    .padRight(34)
+                    .with(b -> {
+                        b.setName(getName("Settings")).setColor(SimpleColor.DIRTY_WHITE);
+                    });
+            panel.button(Styles.TEXT_BUTTON, this::exitBtn)
+                    .with(b -> {
+                        b.setName(getName("Exit"))
+                                .setColor(SimpleColor.DIRTY_WHITE);
+                    });
+            panel.imageButton(atlas.byPath("UI/discordIcon"), this::discordBtn)
+                    .expandX()
+                    .right();
+        });
     }
 
     private void discordBtn() {

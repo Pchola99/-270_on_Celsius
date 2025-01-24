@@ -9,11 +9,12 @@ import core.ui.Dialog;
 import core.ui.Styles;
 
 import static core.EventHandling.Logging.Json.getName;
+import static core.Global.input;
 import static core.Window.start;
 
 public class Pause extends Dialog {
     public Pause() {
-        addPanel(Styles.SIMPLE_PANEL, 0, 0, EventHandler.width, EventHandler.height);
+        addPanel(Styles.SIMPLE_PANEL, 0, 0, input.getWidth(), input.getHeight());
         addButton(Styles.TEXT_BUTTON, this::continueBtn)
                 .set(840, 650, 240, 65)
                 .setName(getName("Continue"))

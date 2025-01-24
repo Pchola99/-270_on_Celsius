@@ -6,27 +6,28 @@ import core.g2d.Drawable;
 public class ImageElement extends BaseElement<ImageElement> {
     public Drawable image;
 
-    protected ImageElement(Group parent) {
+    public ImageElement(Group parent, Drawable image) {
         super(parent);
+        this.image = image;
     }
 
     public ImageElement setImage(Drawable image) {
         this.image = image;
-        setSize(image.width(), image.height());
         return this;
     }
 
     @Override
-    public void draw() {
-        if (!visible) {
-            return;
-        }
-        if (image != null) {
-            Global.batch.draw(image, x, y);
-        }
+    public float getMinWidth() {
+        return image.width();
     }
 
     @Override
-    public void update() {
+    public float getMinHeight() {
+        return image.height();
+    }
+
+    @Override
+    public void draw() {
+        Global.batch.draw(image, x, y);
     }
 }

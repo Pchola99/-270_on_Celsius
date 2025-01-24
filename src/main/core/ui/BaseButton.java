@@ -7,11 +7,13 @@ import java.util.function.Consumer;
 public abstract class BaseButton<B extends BaseButton<B>> extends BaseElement<B> {
     public boolean isClickable = true, isClicked, oneShot; // TODO перевести на битовые флаги.
     public SimpleColor color;
-    public String name, prompt;
+    public final TextArea name, prompt;
     public Consumer<? super B> clickAction;
 
-    protected BaseButton(Group panel) {
+    protected BaseButton(Group panel, Style.Text textStyle) {
         super(panel);
+        this.name = new TextArea(panel, textStyle);
+        this.prompt = new TextArea(panel, textStyle);
     }
 
     public B setClicked(boolean clicked) {
@@ -20,7 +22,7 @@ public abstract class BaseButton<B extends BaseButton<B>> extends BaseElement<B>
     }
 
     public B setPrompt(String prompt) {
-        this.prompt = prompt;
+        this.prompt.setText(prompt);
         return as();
     }
 
@@ -30,7 +32,7 @@ public abstract class BaseButton<B extends BaseButton<B>> extends BaseElement<B>
     }
 
     public B setName(String name) {
-        this.name = name;
+        this.name.setText(name);
         return as();
     }
 
@@ -57,10 +59,5 @@ public abstract class BaseButton<B extends BaseButton<B>> extends BaseElement<B>
     public B toggleClickable() {
         this.isClickable = !isClickable;
         return as();
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + " {name=" + name + "}";
     }
 }

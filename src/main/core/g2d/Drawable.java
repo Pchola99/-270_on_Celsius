@@ -13,4 +13,16 @@ public sealed interface Drawable
     float v();
     float u2();
     float v2();
+
+    default float getLeftWidth() { return 0; }
+
+    default float getTopHeight() { return 0; }
+
+    default float getBottomHeight() { return 0; }
+
+    default float getRightWidth() { return 0; }
+
+    default float getMinWidth() { return width(); }
+
+    default float getMinHeight() { return height(); }
 }

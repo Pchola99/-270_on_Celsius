@@ -79,7 +79,7 @@ public class TextureDrawing {
     public static void drawPrompt(BaseButton<?> button) {
         if (getFromConfig("ShowPrompts").equals("true")) {
             if (EventHandler.isMousePressed(button) && System.currentTimeMillis() - input.getLastMouseMoveTimestamp() >= 1000 && button.prompt != null) {
-                drawRectangleText(input.mousePos().x, input.mousePos().y, 0, button.prompt, false, Styles.DEFAULT_PANEL_COLOR);
+                // drawRectangleText(input.mousePos().x, input.mousePos().y, 0, button.prompt, false, Styles.DEFAULT_PANEL_COLOR);
             }
         }
     }

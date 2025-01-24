@@ -3,17 +3,15 @@ package core.EventHandling;
 import core.EventHandling.Logging.Config;
 import core.Global;
 import core.UI;
+import core.Window;
 import core.graphic.Layer;
 import core.ui.Dialog;
-import core.Utils.SimpleColor;
 import core.World.Creatures.Physics;
 import core.World.Creatures.Player.Player;
 import core.math.Point2i;
 import core.ui.Element;
 import core.ui.TextArea;
 import org.lwjgl.glfw.GLFWCharCallback;
-import org.lwjgl.glfw.GLFWFramebufferSizeCallback;
-import org.lwjgl.opengl.GL46;
 
 import java.util.function.Supplier;
 
@@ -22,35 +20,30 @@ import static core.Global.*;
 import static core.Utils.Commandline.updateLine;
 import static core.Utils.NativeResources.addResource;
 import static core.Window.*;
-import static core.World.Textures.TextureDrawing.drawText;
+import static core.ui.Styles.DEBUG_TEXT;
 import static org.lwjgl.glfw.GLFW.*;
 
 public class EventHandler {
     private static boolean keyLogging = false;
     public static final StringBuilder keyLoggingText = new StringBuilder(256);
-    public static int width = defaultWidth, height = defaultHeight, debugLevel = Integer.parseInt(Config.getFromConfig("Debug"));
+    public static int debugLevel = Integer.parseInt(Config.getFromConfig("Debug"));
 
     private static final class DebugBox extends TextArea {
         private final Supplier<String> format;
 
         private DebugBox(Supplier<String> format) {
+            super(debugDialog, DEBUG_TEXT);
             this.format = format;
-            this.color = SimpleColor.DIRTY_BRIGHT_BLACK;
         }
 
         @Override
-        public void update() {
-            text = format.get();
+        public void preUpdate() {
+            setText(format.get());
         }
 
         @Override
         public void draw() {
-            if (!visible) {
-                return;
-            }
-            if (text != null) {
-                batch.draw(Layer.DEBUG, () -> drawText(x, y, text, color));
-            }
+            batch.draw(Layer.DEBUG, super::draw);
         }
     }
     private static final Dialog debugDialog = new Dialog();
@@ -63,6 +56,9 @@ public class EventHandler {
     private static void initCallbacks() {
         log("Thread: Event handling started");
 
+        debugDialog.marginLeft(5);
+        debugDialog.top().left();
+        debugDialog.maximize();
         debugDialog.show();
 
         glfwSetCharCallback(glfwWindow, addResource(new GLFWCharCallback() {
@@ -71,15 +67,6 @@ public class EventHandler {
                 if (keyLogging) {
                     keyLoggingText.appendCodePoint(codepoint);
                 }
-            }
-        }));
-        glfwSetFramebufferSizeCallback(glfwWindow, addResource(new GLFWFramebufferSizeCallback() {
-            @Override
-            public void invoke(long window, int width, int height) {
-                EventHandler.width = width;
-                EventHandler.height = height;
-
-                GL46.glViewport(0, 0, width, height);
             }
         }));
     }
@@ -117,6 +104,14 @@ public class EventHandler {
             }
         }
 
+        if (input.justPressed(GLFW_KEY_F12)) {
+            Window.toggleFullscreen();
+        }
+
+        if (input.justPressed(GLFW_KEY_SPACE)) {
+            scene.debug();
+        }
+
         if ((input.justPressed(GLFW_KEY_BACKSPACE) || input.repeated(GLFW_KEY_BACKSPACE)) && isKeylogging()) {
             int length = keyLoggingText.length();
 
@@ -130,9 +125,8 @@ public class EventHandler {
         if (debugLevel > 0) {
             var elem = new DebugBox(format);
 
-            debugDialog.add(elem);
-            int i = debugDialog.children().size();
-            elem.setPosition(5, 1080 - (25 * i));
+            debugDialog.addCell(elem).fillX()
+                    .row();
         }
     }
 

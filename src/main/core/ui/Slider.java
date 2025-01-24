@@ -22,7 +22,7 @@ public class Slider extends BaseElement<Slider> {
         void update(int pos, int max);
     }
 
-    protected Slider(Group parent) {
+    public Slider(Group parent) {
         super(parent);
     }
 
@@ -53,11 +53,14 @@ public class Slider extends BaseElement<Slider> {
     }
 
     @Override
-    public void draw() {
-        if (!visible) {
-            return;
+    protected void resize() {
+        if ((flags & FLAG_X_CHANGED) != 0) {
+            this.prevSliderPos = this.sliderPos = x + 1;
         }
+    }
 
+    @Override
+    public void draw() {
         Fill.rect(x, y, sliderPos - x, height, sliderColor);
 
         int oa = sliderColor.getAlpha();
@@ -107,6 +110,8 @@ public class Slider extends BaseElement<Slider> {
 
     @Override
     public void update() {
+        super.update();
+
         boolean hit = hit(input.mousePos()) == this;
         if (hit) {
             if (input.justClicked(GLFW_MOUSE_BUTTON_1)) {
@@ -126,8 +131,12 @@ public class Slider extends BaseElement<Slider> {
     }
 
     @Override
-    public Slider setX(float x) {
-        this.prevSliderPos = this.sliderPos = x + 1;
-        return super.setX(x);
+    public float getMinWidth() {
+        return 420;
+    }
+
+    @Override
+    public float getMinHeight() {
+        return 20;
     }
 }
