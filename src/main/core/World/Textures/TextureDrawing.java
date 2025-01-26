@@ -2,6 +2,8 @@ package core.World.Textures;
 
 import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Config;
+import core.entity.BaseBlockEntity;
+import core.entity.BlockEntity;
 import core.ui.BaseButton;
 import core.ui.GUI.Video;
 import core.Utils.SimpleColor;
@@ -9,8 +11,6 @@ import core.Utils.Sized;
 import core.Window;
 import core.World.Creatures.DynamicWorldObjects;
 import core.World.Creatures.Player.Inventory.Inventory;
-import core.World.StaticWorldObjects.StaticWAnimations;
-import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.StaticWorldObjects.Structures.Factories;
 import core.World.StaticWorldObjects.TemperatureMap;
 import core.World.WorldUtils;
@@ -31,7 +31,6 @@ import static core.Global.*;
 import static core.ui.GUI.Video.byteBuffer;
 import static core.ui.GUI.Video.video;
 import static core.World.Creatures.Player.Player.*;
-import static core.World.StaticWorldObjects.StaticWorldObjects.*;
 import static core.World.Weather.Sun.updateSun;
 import static core.World.WorldGenerator.*;
 
@@ -44,12 +43,7 @@ public class TextureDrawing {
 
     public static Rectangle viewport = new Rectangle();
 
-    public record blockQueue(int cellX, int cellY, short obj, boolean breakable) {}
-
-    // todo Сломано сознательно, чуть позже доделаю
-    @Deprecated(forRemoval = true)
-    public static void drawTexture(float x, float y, int w, int h, float zoom, boolean isStatic, int id, ByteBuffer buffer, SimpleColor color) {
-    }
+    public record blockQueue(int cellX, int cellY, BaseBlockEntity obj, boolean breakable) {}
 
     public static void drawText(float x, float y, String text, SimpleColor color) {
         float startX = x;
@@ -207,7 +201,16 @@ public class TextureDrawing {
     }
 
     public static void updateStaticObj() {
-        Factories.update();
+        // TODO обновление всего мира это не очень приятно
+
+        for (int x = 0; x < world.sizeX; x++) {
+            for (int y = 0; y < world.sizeY; y++) {
+                var block = world.get(x, y);
+                if (block != null) {
+                    block.update();
+                }
+            }
+        }
 
         batch.pushState(() -> {
             batch.z(Layer.BACKGROUND);
@@ -239,29 +242,28 @@ public class TextureDrawing {
         updateBlocksInteraction();
     }
 
-    private static void drawQueuedBlock(int x, int y, short obj, boolean breakable) {
-        if (obj == -1 || StaticWorldObjects.getTexture(obj) == null) {
-            return;
-        }
+    private static final SimpleColor tmp = new SimpleColor();
 
-        byte hp = getHp(obj);
+    private static void drawQueuedBlock(int x, int y, BlockEntity obj, boolean breakable) {
+        float hp = obj.hp();
         int xBlock = findX(x, y);
         int yBlock = findY(x, y);
 
-        if (isOnCamera(xBlock, yBlock, getTexture(obj))) {
-            SimpleColor color = ShadowMap.getColor(x, y);
+        if (isOnCamera(xBlock, yBlock, obj.type().texture)) {
+            ShadowMap.getColorTo(x, y, tmp);
+            var color = tmp;
             int a = (color.getRed() + color.getGreen() + color.getBlue()) / 3;
             SimpleColor blockColor = breakable ? SimpleColor.fromRGBA(Math.max(0, a - 150), Math.max(0, a - 150), a, 255) : SimpleColor.fromRGBA(a, Math.max(0, a - 150), Math.max(0, a - 150), 255);
 
-            StaticWAnimations.AnimData currentFrame = StaticWAnimations.getCurrentFrame(obj, new Point2i(x, y));
-            if (currentFrame != null) {
-                drawTexture(xBlock, yBlock, currentFrame.width(), currentFrame.height(), 1, false, currentFrame.currentFrame() + StaticWorldObjects.getId(obj), currentFrame.currentFrameImage(), blockColor);
-                return;
-            }
+            // StaticWAnimations.AnimData currentFrame = StaticWAnimations.getCurrentFrame(obj, new Point2i(x, y));
+            // if (currentFrame != null) {
+            //     drawTexture(xBlock, yBlock, currentFrame.width(), currentFrame.height(), 1, false, currentFrame.currentFrame() + StaticWorldObjects.getId(obj), currentFrame.currentFrameImage(), blockColor);
+            //     return;
+            // }
 
-            batch.draw(getTexture(obj), blockColor, xBlock, yBlock);
+            batch.draw(obj.type().texture, blockColor, xBlock, yBlock);
 
-            float maxHp = getMaxHp(obj);
+            float maxHp = obj.type().maxHp;
             if (hp > maxHp / 1.5f) {
                 // ???
             } else if (hp < maxHp / 3) {
@@ -273,57 +275,17 @@ public class TextureDrawing {
     }
 
     private static void drawBlock(int x, int y) {
-        short obj = world.get(x, y);
-
-        if (obj == -1 || StaticWorldObjects.getId(obj) == 0 || getTexture(obj) == null) {
-            return;
-        }
-        byte hp = getHp(obj);
-        if (hp <= 0) {
-            world.destroy(x, y);
+        var obj = world.get(x, y);
+        if (obj == null) {
             return;
         }
 
-        int xBlock = findX(x, y);
-        int yBlock = findY(x, y);
-
-        if (isOnCamera(xBlock, yBlock, getTexture(obj))) {
-            SimpleColor color = ShadowMap.getColor(x, y);
-            int upperLimit = 100;
-            int lowestLimit = -20;
-            int maxColor = 65;
-            float temp = TemperatureMap.getTemp(x, y);
-
-            int a;
-            if (temp > upperLimit) {
-                a = (int) Math.min(maxColor, Math.abs((temp - upperLimit) / 3));
-                color = SimpleColor.fromRGBA(color.getRed(), color.getGreen() - (a / 2), color.getBlue() - a, color.getAlpha());
-
-            } else if (temp < lowestLimit) {
-                a = (int) Math.min(maxColor, Math.abs((temp + lowestLimit) / 3));
-                color = SimpleColor.fromRGBA(color.getRed() - a, color.getGreen() - (a / 2), color.getBlue(), color.getAlpha());
-            }
-
-            StaticWAnimations.AnimData currentFrame = StaticWAnimations.getCurrentFrame(obj, new Point2i(x, y));
-            if (currentFrame != null) {
-                drawTexture(xBlock, yBlock, currentFrame.width(), currentFrame.height(), 1, false, currentFrame.currentFrame() + StaticWorldObjects.getId(obj), currentFrame.currentFrameImage(), color);
-                return;
-            }
-
-            batch.draw(getTexture(obj), color, xBlock, yBlock);
-
-            float maxHp = getMaxHp(obj);
-            if (hp > maxHp / 1.5f) {
-                // ???
-            } else if (hp < maxHp / 3) {
-                batch.draw(atlas.byPath("World/Blocks/damaged1.png"), xBlock, yBlock);
-            } else {
-                batch.draw(atlas.byPath("World/Blocks/damaged0.png"), xBlock, yBlock);
-            }
+        if (isOnCamera(x * blockSize, y * blockSize, obj.type().texture)) {
+            obj.draw();
         }
     }
 
-    public static void addToBlocksQueue(int cellX, int cellY, short obj, boolean breakable) {
+    public static void addToBlocksQueue(int cellX, int cellY, BaseBlockEntity obj, boolean breakable) {
         blocksQueue.add(new TextureDrawing.blockQueue(cellX, cellY, obj, breakable));
     }
 
@@ -334,7 +296,8 @@ public class TextureDrawing {
         boolean interactionButtonPressed = input.pressed(interactionChar);
 
         if (root != null) {
-            Runnable interaction = StaticWorldObjects.getOnInteraction(world.get(root.x, root.y));
+            // TODO
+            Runnable interaction = null; // StaticWorldObjects.getOnInteraction(world.get(root.x, root.y));
 
             if (currentInteraction != null && currentInteraction.isAlive() && interactionButtonPressed) {
                 currentInteraction.interrupt();

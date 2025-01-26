@@ -1,97 +1,58 @@
 package core.World.StaticWorldObjects;
 
-import core.EventHandling.Logging.Logger;
 import core.assets.AssetsManager;
-import core.g2d.Atlas;
+import core.entity.BaseBlockEntity;
+import core.entity.BlockEntity;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Locale;
+
+import static core.Global.assets;
+import static core.World.StaticWorldObjects.StaticObjectsConst.load;
 
 public abstract class StaticWorldObjects implements Serializable {
-    public static final HashMap<String, Byte> ids = new HashMap<>();
-    private static byte lastId = -128;
+    private static final HashMap<String, StaticObjectsConst> registry = new HashMap<>();
 
-    public static short createStatic(String name) {
+    public static StaticObjectsConst createStatic(String name) {
         name = AssetsManager.normalizePath(name);
+        var objectsConst = registry.get(name);
+        if (objectsConst == null) {
+            objectsConst = load(assets.assetsDir("World/ItemsCharacteristics/" + name + ".properties"));
+            // objectsConst.optionalTiles = optionalTiles;
+            objectsConst.originalFileName = name;
+            registry.put(name, objectsConst);
+            // Structures.bindStructure(name, id);
 
-        byte id = generateId(name);
-        StaticObjectsConst.setConst(name, id);
 
-        return (short) ((((byte) getMaxHp(id) & 0xFF) << 8) | (id & 0xFF));
-    }
-
-    public static boolean idsContains(String name) {
-        return ids.containsKey(name);
-    }
-
-    public static byte generateId(String name) {
-        if (name == null) {
-            return 0;
+            ids.put(objectsConst, (byte) idCounter++);
         }
-        byte id = ids.getOrDefault(name, (byte) 0);
-
-        if (id != 0) {
-            return id;
-        } else {
-            lastId++;
-
-            if (lastId == -128) {
-                Logger.log("Number of id's static objects exceeded, errors will occur");
-            }
-            ids.put(name, lastId);
-            return lastId;
-        }
+        return objectsConst;
     }
 
-    public static float getMaxHp(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).maxHp : 0;
+    public static float getDensity(BlockEntity entity) {
+        return entity == null ? 0 : entity.type().density;
     }
 
-    public static float getDensity(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).density : 0;
+    public static String getFileName(BlockEntity entity) {
+        return entity == null ? null : entity.type().originalFileName;
     }
 
-    public static Atlas.Region getTexture(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).texture : null;
+    public static StaticObjectsConst.Types getType(StaticObjectsConst staticObjectsConst) {
+        return staticObjectsConst == null ? StaticObjectsConst.Types.GAS : staticObjectsConst.type;
     }
 
-    public static String getName(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).objectName : "";
+    public static StaticObjectsConst.Types getType(BlockEntity entity) {
+        return entity == null ? StaticObjectsConst.Types.GAS : entity.type().type;
     }
 
-    public static String getFileName(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).originalFileName : null;
+    public static float getResistance(BlockEntity entity) {
+        return entity == null ? 0 : entity.type().resistance;
     }
 
-    public static StaticObjectsConst.Types getType(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).type : null;
-    }
-
-    public static float getResistance(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).resistance : 0;
-    }
-
-    public static int getLightTransmission(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).lightTransmission : 0;
-    }
-
-    public static Runnable getOnInteraction(short id) {
-        return StaticObjectsConst.checkIsHere(getId(id)) ? StaticObjectsConst.getConst(getId(id)).onInteraction : null;
-    }
-
-    public static byte getId(short id) {
-        return (byte) (id & 0xFF);
-    }
-
-    public static byte getHp(short id) {
-        return (byte) ((id >> 8) & 0xFF);
-    }
-
-    public static short incrementHp(short id, int count) {
-        return (short) (((getHp(id) + count & 0xFF) << 8) | (id & 0xFF));
-    }
-
-    public static short decrementHp(short id, int count) {
-        return (short) (((getHp(id) - count & 0xFF) << 8) | (id & 0xFF));
+    static final HashMap<StaticObjectsConst, Byte> ids = new HashMap<>();
+    static int idCounter = 0;
+    public static byte getId(StaticObjectsConst staticObjectsConst) {
+        return ids.get(staticObjectsConst);
     }
 }

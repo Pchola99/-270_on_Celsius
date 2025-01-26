@@ -3,7 +3,6 @@ package core;
 import core.EventHandling.Logging.Logger;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.function.Supplier;

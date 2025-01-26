@@ -11,7 +11,6 @@ import core.World.Creatures.Physics;
 import core.World.Creatures.Player.Inventory.Inventory;
 import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.StaticWorldObjects.Structures.ElectricCables;
-import core.World.StaticWorldObjects.Structures.Factories;
 import core.World.Creatures.Player.Player;
 import core.World.Creatures.DynamicWorldObjects;
 import core.World.StaticWorldObjects.TemperatureMap;
@@ -27,7 +26,6 @@ import java.util.*;
 import static core.EventHandling.Logging.Logger.log;
 import static core.Global.*;
 import static core.Global.world;
-import static core.World.StaticWorldObjects.StaticObjectsConst.getConst;
 import static core.World.StaticWorldObjects.StaticWorldObjects.*;
 
 public class WorldGenerator {
@@ -55,35 +53,38 @@ public class WorldGenerator {
         return objects;
     }
 
-    private static String[] convertNames(short[] blocks) {
-        String[] names = new String[blocks.length];
-
-        for (int i = 0; i < names.length; i++) {
-            names[i] = StaticWorldObjects.getFileName(blocks[i]);
-        }
-        return names;
-    }
-
-    public static boolean checkPlaceRules(int x, int y, short root) {
-        if (getId(world.get(x, y)) != 0) {
+    public static boolean checkPlaceRules(int x, int y, StaticObjectsConst root) {
+        if (!world.inBounds(x, y)) {
             return false;
         }
-        if (getConst(getId(root)).optionalTiles != null) {
-            short[][] tiles = getConst(getId(root)).optionalTiles;
+        if (world.get(x, y) != null) {
+            return false;
+        }
+        if (root.optionalTiles != null) {
+            var tiles = root.optionalTiles;
 
             for (int xBlock = 0; xBlock < tiles.length; xBlock++) {
+                if (!world.inBounds(x + xBlock, y - 1)) {
+                    return false;
+                }
                 if (getResistance(world.get(x + xBlock, y - 1)) < 100) {
                     return false;
                 }
                 for (int yBlock = 0; yBlock < tiles[0].length; yBlock++) {
-                    if (getId(world.get(x + xBlock, y)) != 0) {
+                    if (!world.inBounds(x + xBlock, y)) {
+                        return false;
+                    }
+                    if (world.get(x + xBlock, y) != null) {
                         return false;
                     }
                 }
             }
         } else {
             for (Point2i d : MathUtil.CROSS_OFFSETS) {
-                if (!(getResistance(world.get(x + d.x, y + d.y)) < 100)) {
+                if (!world.inBounds(x + d.x, y + d.y)) {
+                    continue;
+                }
+                if (getResistance(world.get(x + d.x, y + d.y)) >= 100) {
                     return true;
                 }
             }
@@ -115,7 +116,6 @@ public class WorldGenerator {
 
         log("\nWorld generator: version: 1.0, written at dev 0.0.0.5" + "\nWorld generator: starting generating world with size: x - " + world.sizeX + ", y - " + world.sizeY);
 
-        StaticObjectsConst.setDestroyed();
         step(() -> generateRelief(world));
 
         step(() -> ShadowMap.generate());
@@ -167,14 +167,14 @@ public class WorldGenerator {
 
                 if (lastX < world.sizeX && lastY > 0) {
                     for (int y = 0; y < lastY; y++) {
-                        short object = createStatic("Blocks/grass");
+                        var object = createStatic("Blocks/grass");
                         world.set((int) lastX, y, object, false);
                     }
                 } else {
                     break;
                 }
             }
-        } while (!(lastX + 1 > world.sizeX));
+        } while (lastX + 1 <= world.sizeX);
     }
 
     private static void generateCaves() {
@@ -186,7 +186,7 @@ public class WorldGenerator {
             int y = 0;
 
             for (int i = 0; i < world.sizeY; i++) {
-                if (world.get(x, i) != -1) {
+                if (world.inBounds(x, i)) {
                     y = i;
                     break;
                 }
@@ -204,6 +204,7 @@ public class WorldGenerator {
         float startRadius = radius;
         float angle = (float) ((Math.random() * 180) + 90);
 
+        int ix, iy;
         do {
             if (Math.random() * 30 < 1) {
                 radius = (int) Math.clamp(radius + (Math.random() * 2) - 1, minRadius, startRadius);
@@ -227,18 +228,20 @@ public class WorldGenerator {
                 y += deltaY;
                 x += deltaX;
 
+                ix = (int) x;
+                iy = (int) y;
                 if (x < world.sizeX && y < world.sizeY && x > 0 && y > 0) {
                     if (start == 0) {
-                        if (world.get((int) x, (int) y) != -1) {
-                            start = (int) y;
+                        if (world.inBounds(ix, iy)) {
+                            start = iy;
                         }
                     }
-                    world.destroy((int) x, (int) y);
+                    world.destroy(ix, iy);
 
                     for (int i = (int) (x - radius); i <= x + radius; i++) {
                         for (int k = (int) (y - radius); k <= y + radius; k++) {
                             if (i > 0 && i < world.sizeX && k > 0 && k < world.sizeY) {
-                                world.destroy((int) x, (int) y);
+                                world.destroy(ix, iy);
                             }
                         }
                     }
@@ -280,7 +283,7 @@ public class WorldGenerator {
 
                 if (y - 1 > 0 && getType(world.get(x, y - 1)) == StaticObjectsConst.Types.SOLID) {
                     if (getResistance(world.get(x, y - 1)) == 100) {
-                        short object = StaticWorldObjects.createStatic("Blocks/smallStone");
+                        var object = StaticWorldObjects.createStatic("Blocks/smallStone");
                         world.set(x, y, object, false);
                     }
                 }
@@ -317,7 +320,7 @@ public class WorldGenerator {
                     int yStruct = findFreeVerticalCell(x + (i * distance));
 
                     if (xStruct > 0 && yStruct > 0 && xStruct < forests.length) {
-                        short object = StaticWorldObjects.createStatic(name);
+                        var object = StaticWorldObjects.createStatic(name);
                         world.set(xStruct, yStruct, object, true);
                     }
                 }
@@ -330,7 +333,7 @@ public class WorldGenerator {
         if (structure == null) {
             return false;
         }
-        short[][] objects = Structures.bindStructures(structure.blocks);
+        StaticObjectsConst[][] objects = Structures.bindStructures(structure.blocks);
 
         for (int x = xCell; x < xCell + objects.length; x++) {
             for (int y = yCell; y < yCell + objects[0].length; y++) {
@@ -344,7 +347,7 @@ public class WorldGenerator {
         return false;
     }
 
-    private static boolean checkInterInsideSolid(int xCell, int yCell, short[][] blocks) {
+    private static boolean checkInterInsideSolid(int xCell, int yCell, StaticObjectsConst[][] blocks) {
         for (int x = xCell; x < xCell + blocks.length; x++) {
             for (int y = yCell; y < yCell + blocks[0].length; y++) {
                 if (x > 0 && y > 0 && x < world.sizeX && y < world.sizeY) {
@@ -358,7 +361,7 @@ public class WorldGenerator {
     }
 
     private static int findFreeVerticalCell(int x) {
-        if (x <= 0 || x >= world.sizeX) {
+        if (x < 0 || x >= world.sizeX) {
             return -1;
         }
         for (int y = 0; y < world.sizeY; y++) {
@@ -376,24 +379,25 @@ public class WorldGenerator {
 
         for (int x = 0; x < world.sizeX; x++) {
             for (int y = 0; y < world.sizeY; y++) {
-                if (getType(world.get(x, y + 1)) != StaticObjectsConst.Types.GAS) { //Generating ground under grass blocks
-                    short object = createStatic("Blocks/dirt");
+                if (!world.inBounds(x, y + 1) ||
+                        getType(world.get(x, y + 1)) != StaticObjectsConst.Types.GAS) { //Generating ground under grass blocks
+                    var object = createStatic("Blocks/dirt");
                     world.set(x, y, object, false);
                 }
 
                 if (ShadowMap.getDegree(x, y) >= 3) { //Generating stone
-                    short object = createStatic("Blocks/stone");
+                    var object = createStatic("Blocks/stone");
                     world.set(x, y, object, false);
                 }
 
                 if (PerlinNoiseGenerator.noise[x][y] && ShadowMap.getDegree(x, y) >= 3) { //Generating ore
-                    short object = createStatic("Blocks/aluminum");
+                    var object = createStatic("Blocks/aluminum");
                     world.set(x, y, object, false);
                 }
 
                 if (ShadowMap.getDegree(x, y) == 2) { //Generation of transitions between earth and stone
                     if (!getFileName(world.get(x, y + 1)).equals("Blocks/dirtStone")) {
-                        short object = createStatic("Blocks/dirtStone");
+                        var object = createStatic("Blocks/dirtStone");
                         world.set(x, y, object, false);
                     }
                 }
@@ -407,14 +411,23 @@ public class WorldGenerator {
     // This increases the search speed by a factor of `period`,
     // but decreases the chance of finding single blocks in the strip by the same amount
     // return -1 if not found
-    public static int findTopmostSolidBlock(int cellX, int period) {
+    public static int findTopmostSolidBlock(int cx, int period) {
         for (int y = world.sizeY; y > 0; y -= period) {
-            if (StaticWorldObjects.getType(world.get(cellX, y)) == StaticObjectsConst.Types.SOLID) {
+            if (!world.inBounds(cx, y)) {
+                continue;
+            }
+
+            if (StaticWorldObjects.getType(world.get(cx, y)) == StaticObjectsConst.Types.SOLID) {
                 for (int i = y; i < y + period; i++) {
-                    if (StaticWorldObjects.getType(world.get(cellX, i + 1)) == StaticObjectsConst.Types.GAS) {
-                        if (StaticWorldObjects.getType(world.get(cellX, i)) == StaticObjectsConst.Types.SOLID) {
-                            return i;
-                        }
+                    if (!world.inBounds(cx, i)) {
+                        continue;
+                    }
+                    if (!world.inBounds(cx, i + 1)) {
+                        continue;
+                    }
+                    if (StaticWorldObjects.getType(world.get(cx, i + 1)) == StaticObjectsConst.Types.GAS &&
+                            StaticWorldObjects.getType(world.get(cx, i)) == StaticObjectsConst.Types.SOLID) {
+                        return i;
                     }
                 }
             }
@@ -425,9 +438,6 @@ public class WorldGenerator {
     public static void start(boolean generateCreatures) {
         UI.createPlanet().hide();
 
-        world.registerListener(new Factories());
-        Inventory.registerListener(new ElectricCables());
-        Inventory.registerListener(new Factories());
         Sun.createSun();
         Physics.initPhysics();
         if (generateCreatures) {

@@ -19,7 +19,6 @@ import static core.Window.glfwWindow;
 import static core.World.Creatures.Player.Player.*;
 import static core.World.HitboxMap.*;
 import static core.World.StaticWorldObjects.StaticWorldObjects.getResistance;
-import static core.World.StaticWorldObjects.Structures.Factories.updateFactoriesOutput;
 import static core.World.WorldGenerator.*;
 import static org.lwjgl.glfw.GLFW.glfwWindowShouldClose;
 
@@ -134,15 +133,20 @@ public class Physics {
         if (vectorX > minVectorIntersDamage || vectorX < -minVectorIntersDamage || vectorY > minVectorIntersDamage || vectorY < -minVectorIntersDamage) {
             Point2i[] staticObjectPoint = HitboxMap.checkIntersOutside(object.getX() + vectorX * 2, object.getY() + vectorY, object.getTexture().width(), object.getTexture().height() + 4);
 
-            if (staticObjectPoint != null) {
+            if (staticObjectPoint != null && staticObjectPoint.length > 0) {
                 float damage = 0;
+                float baseDamage = (object.getWeight() + (Math.max(Math.abs(vectorY), Math.abs(vectorX)) - minVectorIntersDamage)) * intersDamageMultiplier;
                 for (Point2i point : staticObjectPoint) {
-                    short staticObject = world.get(point.x, point.y);
-                    float currentDamage = ((((StaticWorldObjects.getResistance(staticObject) / 100) * StaticWorldObjects.getDensity(staticObject)) + (object.getWeight() + (Math.max(Math.abs(vectorY), Math.abs(vectorX)) - minVectorIntersDamage)) * intersDamageMultiplier)) / staticObjectPoint.length;
+                    if (world.inBounds(point.x, point.y)) {
+                        var staticObject = world.get(point.x, point.y);
+                        float currentDamage = ((((StaticWorldObjects.getResistance(staticObject) / 100) * StaticWorldObjects.getDensity(staticObject)) + baseDamage)) / staticObjectPoint.length;
 
-                    damage += currentDamage;
-                    short object1 = StaticWorldObjects.decrementHp(staticObject, (int) (currentDamage + (getResistance(staticObject) / 100) * StaticWorldObjects.getDensity(staticObject)) / staticObjectPoint.length);
-                    world.set(point.x, point.y, object1, false);
+                        damage += currentDamage;
+                        float blockDamage = (currentDamage + (getResistance(staticObject) / 100) * StaticWorldObjects.getDensity(staticObject)) / staticObjectPoint.length;
+                        staticObject.damage(blockDamage);
+                    } else {
+                        damage += baseDamage/staticObjectPoint.length;
+                    }
                 }
                 object.incrementCurrentHP(-damage);
 
@@ -186,7 +190,7 @@ public class Physics {
 
         for (int xPos = 0; xPos < tarXSize; xPos++) {
             for (int yPos = 0; yPos < tarYSize; yPos++) {
-                if (tarX + tarXSize > world.sizeX || tarY + tarYSize > world.sizeY || world.get(tarX + xPos, tarY + yPos) == -1 || world.get(tarX + tarXSize, tarY + tarYSize) == -1) {
+                if (tarX + tarXSize > world.sizeX || tarY + tarYSize > world.sizeY || !world.inBounds(tarX + xPos, tarY + yPos) || !world.inBounds(tarX + tarXSize, tarY + tarYSize)) {
                     continue;
                 }
                 if (getResistance(world.get(tarX + xPos, tarY + yPos)) < 100) {
@@ -208,6 +212,5 @@ public class Physics {
     private static void updateWorldInteractions() {
         updateInventoryInteraction();
         Weapons.updateAmmo();
-        updateFactoriesOutput();
     }
 }

@@ -2,9 +2,11 @@ package core.World.Creatures.Player.Inventory;
 
 import core.EventHandling.EventHandler;
 import core.EventHandling.Logging.Config;
+import core.Global;
 import core.World.Creatures.Player.BuildMenu.BuildMenu;
 import core.World.Creatures.Player.Inventory.Items.Items;
 import core.Utils.SimpleColor;
+import core.World.StaticWorldObjects.StaticObjectsConst;
 import core.World.StaticWorldObjects.StaticWorldObjects;
 import core.World.Textures.TextureDrawing;
 import core.World.WorldGenerator;
@@ -26,11 +28,6 @@ public class Inventory {
     public static Items[][] inventoryObjects = new Items[8][6];
     public static Point2i currentObject, underMouseItem;
     public static Items.Types currentObjectType;
-    private static final ArrayList<InventoryEvents> listeners = new ArrayList<>();
-
-    public static void registerListener(InventoryEvents event) {
-        listeners.add(event);
-    }
 
     public static Items getCurrent() {
         Point2i current = currentObject;
@@ -137,13 +134,13 @@ public class Inventory {
         Point2i current = currentObject;
 
         if (current != null) {
-            short placeable = inventoryObjects[current.x][current.y].placeable;
+            var placeable = inventoryObjects[current.x][current.y].placeable;
             int blockX = getBlockUnderMousePoint().x;
             int blockY = getBlockUnderMousePoint().y;
 
-            if (placeable != 0 && underMouseItem == null && !Rectangle.contains(1488, 756, 500, 500, input.mousePos())) {
+            if (placeable != null && underMouseItem == null && !Rectangle.contains(1488, 756, 500, 500, input.mousePos())) {
                 boolean isDeclined = getDistanceToMouse() < 8 && WorldGenerator.checkPlaceRules(blockX, blockY, placeable);
-                TextureDrawing.addToBlocksQueue(blockX, blockY, placeable, isDeclined);
+                // TextureDrawing.addToBlocksQueue(blockX, blockY, placeable, isDeclined);
 
                 if (Config.getFromConfig("BuildGrid").equalsIgnoreCase("true")) {
                     var color = SimpleColor.fromRGBA(230, 230, 230, 150);
@@ -188,10 +185,10 @@ public class Inventory {
                 moveItems(hasItemsMouse, underMouseItem);
                 currentObject = hasItemsMouse;
             } else {
-                Point2i mousePos = getBlockUnderMousePoint();
-
-                for (InventoryEvents listener : listeners) {
-                    listener.itemDropped(mousePos.x, mousePos.y, inventoryObjects[underMouseItem.x][underMouseItem.y]);
+                Point2i mousePos = Global.input.mouseBlockPos();
+                var block = world.get(mousePos.x, mousePos.y);
+                if (block != null) {
+                    block.onItemDropped(inventoryObjects[underMouseItem.x][underMouseItem.y]);
                 }
             }
             underMouseItem = null;
@@ -257,7 +254,7 @@ public class Inventory {
         }
     }
 
-    public static void createElementPlaceable(short object) {
+    public static void createElementPlaceable(StaticObjectsConst object) {
         byte id = StaticWorldObjects.getId(object);
 
         if (findCountID(id) > 1) {

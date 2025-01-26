@@ -14,6 +14,8 @@ import core.World.StaticWorldObjects.TemperatureMap;
 import core.World.Textures.ShadowMap;
 import core.World.Textures.TextureDrawing;
 import core.World.WorldGenerator;
+import core.entity.BaseBlockEntity;
+import core.entity.BlockEntity;
 import core.g2d.Fill;
 import core.g2d.Texture;
 import core.graphic.Layer;
@@ -99,14 +101,14 @@ public class Player {
                 int blockX = blockUMB.x;
                 int blockY = blockUMB.y;
 
-                if (item != null && item.placeable != 0) {
+                if (item != null && item.placeable != null) {
                     updatePlaceableBlock(item.placeable, blockX, blockY);
                 }
             }
         }
     }
 
-    private static void updatePlaceableBlock(short placeable, int blockX, int blockY) {
+    private static void updatePlaceableBlock(StaticObjectsConst placeable, int blockX, int blockY) {
         if (!placeRules || WorldGenerator.checkPlaceRules(blockX, blockY, placeable)) {
             decrementItem(currentObject.x, currentObject.y);
             world.set(blockX, blockY, placeable, false);
@@ -122,59 +124,64 @@ public class Player {
             Point2i blockUMB = getBlockUnderMousePoint();
             int blockX = blockUMB.x;
             int blockY = blockUMB.y;
-            short object = world.get(blockX, blockY);
-
-            if (object != 0 && getTexture(object) != null && !StaticObjectsConst.getConst(getId(object)).hasMotherBlock && StaticObjectsConst.getConst(getId(object)).optionalTiles == null) {
-                updateNonStructure(blockX, blockY, object, tool);
-            } else if (StaticObjectsConst.getConst(getId(object)).hasMotherBlock || StaticObjectsConst.getConst(getId(object)).optionalTiles != null) {
-                updateStructure(blockX, blockY, object, tool);
+            if (world.inBounds(blockX, blockY)) {
+                var object = world.get(blockX, blockY);
+                // TODO
+                // if (object != null && !StaticObjectsConst.getConst(getId(object)).hasMotherBlock && StaticObjectsConst.getConst(getId(object)).optionalTiles == null) {
+                //     updateNonStructure(blockX, blockY, object, tool);
+                // } else if (!(!StaticObjectsConst.getConst(getId(object)).hasMotherBlock && StaticObjectsConst.getConst(getId(object)).optionalTiles == null)) {
+                //     updateStructure(blockX, blockY, object, tool);
+                // }
             }
         }
     }
 
-    private static void updateNonStructure(int blockX, int blockY, short object, Tools tool) {
+    private static void updateNonStructure(int blockX, int blockY, BlockEntity object, Tools tool) {
         if (getDistanceToMouse() <= tool.maxInteractionRange && ShadowMap.getDegree(blockX, blockY) == 0) {
-            TextureDrawing.addToBlocksQueue(blockX, blockY, object, true);
+            // TextureDrawing.addToBlocksQueue(blockX, blockY, object.tile, true);
 
-            if (input.clicked(GLFW_MOUSE_BUTTON_LEFT) && getId(object) != 0 && System.currentTimeMillis() - tool.lastHitTime >= tool.secBetweenHits && getHp(object) > 0) {
+            if (input.clicked(GLFW_MOUSE_BUTTON_LEFT) &&
+                    object != null &&
+                    System.currentTimeMillis() - tool.lastHitTime >= tool.secBetweenHits) {
                 tool.lastHitTime = System.currentTimeMillis();
 
-                if (getHp(decrementHp(object, (int) tool.damage)) <= 0) {
-                    createElementPlaceable(object);
-                    world.destroy(blockX, blockY);
-                } else {
-                    world.set(blockX, blockY, decrementHp(object, (int) tool.damage), false);
+                if (object.damage(tool.damage)) {
+                    createElementPlaceable(object.type());
                 }
             }
         } else {
-            TextureDrawing.addToBlocksQueue(blockX, blockY, object, false);
+            // TextureDrawing.addToBlocksQueue(blockX, blockY, object.tile, false);
         }
     }
 
-    private static void updateStructure(int blockX, int blockY, short object, Tools tool) {
+    private static void updateStructure(int blockX, int blockY, BlockEntity object, Tools tool) {
         Point2i root = findRoot(blockX, blockY);
 
         if (root != null) {
             blockX = root.x;
             blockY = root.y;
 
+            var block = world.get(root.x, root.y);
             if (getDistanceToMouse() <= tool.maxInteractionRange && ShadowMap.getDegree(blockX, blockY) == 0) {
-                TextureDrawing.addToBlocksQueue(blockX, blockY, world.get(root.x, root.y), true);
+                // TextureDrawing.addToBlocksQueue(blockX, blockY, block.tile, true);
 
-                if (input.justClicked(GLFW_MOUSE_BUTTON_LEFT) && getId(object) != 0 && System.currentTimeMillis() - tool.lastHitTime >= tool.secBetweenHits && getHp(object) > 0) {
+                if (input.justClicked(GLFW_MOUSE_BUTTON_LEFT) && object != null &&
+                        System.currentTimeMillis() - tool.lastHitTime >= tool.secBetweenHits) {
                     tool.lastHitTime = System.currentTimeMillis();
                     decrementHpMulti(blockX, blockY, (int) tool.damage, root);
                 }
             } else {
-                TextureDrawing.addToBlocksQueue(blockX, blockY, world.get(root.x, root.y), false);
+                // TextureDrawing.addToBlocksQueue(blockX, blockY, block.tile, false);
             }
         }
     }
 
     // searches for the root of a structure within a radius of 4 blocks
     public static Point2i findRoot(int cellX, int cellY) {
-        if (!StaticObjectsConst.getConst(getId(world.get(cellX, cellY))).hasMotherBlock) {
-            if (StaticObjectsConst.getConst(getId(world.get(cellX, cellY))).optionalTiles == null) {
+        var entity1 = world.get(cellX, cellY);
+        if (!entity1.type().hasMotherBlock) {
+            var entity = world.get(cellX, cellY);
+            if (entity.type().optionalTiles == null) {
                 return null;
             }
         }
@@ -183,7 +190,8 @@ public class Player {
 
         for (int blockX = 0; blockX < maxCellsX; blockX++) {
             for (int blockY = 0; blockY < maxCellsY; blockY++) {
-                StaticObjectsConst objConst = StaticObjectsConst.getConst(getId(world.get(cellX - blockX, cellY - blockY)));
+                var entity = world.get(cellX - blockX, cellY - blockY);
+                StaticObjectsConst objConst = entity.type();
                 if (objConst != null && objConst.optionalTiles != null) {
                     return new Point2i(cellX - blockX, cellY - blockY);
                 }
@@ -194,19 +202,22 @@ public class Player {
 
     private static void decrementHpMulti(int cellX, int cellY, int hp, Point2i root) {
         if (root != null) {
-            if (world.get(root.x, root.y) != 0) {
-                short rootObj = world.get(root.x, root.y);
+            if (world.get(root.x, root.y) != null) {
+                var rootObj = world.get(root.x, root.y);
 
-                for (int x = -(cellX - root.x); x < StaticObjectsConst.getConst(getId(rootObj)).optionalTiles.length - (cellX - root.x); x++) {
-                    for (int y = -(cellY - root.y); y < StaticObjectsConst.getConst(getId(rootObj)).optionalTiles[0].length - (cellY - root.y); y++) {
-                        short object = world.get(x + cellX, y + cellY);
-
-                        if (getHp(decrementHp(object, hp)) <= 0 && getType(object) != StaticObjectsConst.Types.GAS) {
-                            createElementPlaceable(rootObj);
-                            world.destroy(cellX, cellY);
+                StaticObjectsConst[][] optTiles = rootObj.type().optionalTiles;
+                for (int x = -(cellX - root.x); x < optTiles.length - (cellX - root.x); x++) {
+                    for (int y = -(cellY - root.y); y < optTiles[0].length - (cellY - root.y); y++) {
+                        if (!world.inBounds(x + cellX, y + cellY)) {
+                            continue;
+                        }
+                        var object = world.get(x + cellX, y + cellY);
+                        if (object == null) {
+                            continue;
+                        }
+                        if (object.damage(hp)) {
+                            createElementPlaceable(rootObj.type());
                             break;
-                        } else if (getType(object) != StaticObjectsConst.Types.GAS) {
-                            world.tiles[(x + cellX) + world.sizeX * (y + cellY)] = decrementHp(object, hp);
                         }
                     }
                 }

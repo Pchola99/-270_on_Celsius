@@ -26,6 +26,14 @@ public class ShadowMap {
         return new SimpleColor(shadows[x + world.sizeX * y]);
     }
 
+    public static void getShadowTo(int x, int y, SimpleColor out) {
+        if (x < 0 || y < 0 || x >= world.sizeX || y >= world.sizeY) {
+            out.rgba = SimpleColor.CLEAR.rgba;
+        } else {
+            out.rgba = shadows[x + world.sizeX * y];
+        }
+    }
+
     public static void setShadow(int x, int y, SimpleColor color) {
         if (x < 0 || y < 0 || x >= world.sizeX || y >= world.sizeY) {
             return;
@@ -104,13 +112,13 @@ public class ShadowMap {
         }
     }
 
-    public static SimpleColor getColor(int x, int y) {
-        int r = getShadow(x, y).getRed() + addedColor.getRed() - deletedColor.getRed();
-        int g = getShadow(x, y).getGreen() + addedColor.getGreen() - deletedColor.getGreen();
-        int b = getShadow(x, y).getBlue() + addedColor.getBlue() - deletedColor.getBlue();
-        int a = getShadow(x, y).getAlpha() + addedColor.getAlpha() - deletedColor.getAlpha();
-
-        return SimpleColor.fromRGBA(r, g, b, a);
+    public static void getColorTo(int x, int y, SimpleColor out) {
+        getShadowTo(x, y, out);
+        int r = out.getRed() + addedColor.getRed() - deletedColor.getRed();
+        int g = out.getGreen() + addedColor.getGreen() - deletedColor.getGreen();
+        int b = out.getBlue() + addedColor.getBlue() - deletedColor.getBlue();
+        int a = out.getAlpha() + addedColor.getAlpha() - deletedColor.getAlpha();
+        out.setRGBA(r, g, b, a);
     }
 
     public static SimpleColor getColorDynamic(DynamicWorldObjects object) {

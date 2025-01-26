@@ -62,17 +62,14 @@ public class Bullets {
                 Point2i staticObjectPoint = HitboxMap.checkIntersInside(x, y, 8, 8);
 
                 if (staticObjectPoint != null) {
-                    short staticObject = world.get(staticObjectPoint.x, staticObjectPoint.y);
+                    var staticObject = world.get(staticObjectPoint.x, staticObjectPoint.y);
                     DynamicWorldObjects dynamicObject = HitboxMap.checkIntersectionsDynamic(x, y, 8, 8);
 
-                    if (staticObject > 0) {
-                        float hp = StaticWorldObjects.getHp(staticObject);
-                        world.set(staticObjectPoint.x, staticObjectPoint.y, StaticWorldObjects.decrementHp(staticObject, (int) bullet.damage), false);
+                    if (staticObject != null) {
+                        float hp = staticObject.hp();
+                        staticObject.damage(bullet.damage);
                         bulletsIter.next().damage -= hp;
 
-                        if (world.get(staticObjectPoint.x, staticObjectPoint.y) <= 0) {
-                            world.destroy(staticObjectPoint.x, staticObjectPoint.y);
-                        }
                     } else if (dynamicObject != null) {
                         float hp = dynamicObject.getCurrentHP();
                         dynamicObject.incrementCurrentHP(-bullet.damage);

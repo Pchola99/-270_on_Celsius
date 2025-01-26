@@ -17,7 +17,7 @@ import static core.Global.assets;
 public class Items implements Serializable {
     public Items[] requiredForBuild;
     public Weapons weapon;
-    public short placeable;
+    public StaticObjectsConst placeable;
     public Tools tool;
     public Details detail;
     public int id, countInCell;
@@ -34,7 +34,9 @@ public class Items implements Serializable {
         DETAIL
     }
 
-    private Items(Weapons weapon, short placeable, Tools tool, Details detail, int id, Atlas.Region texture, String description, String name, String filename, Items[] requiredForBuild, Types type) {
+    private Items(Weapons weapon, StaticObjectsConst placeable, Tools tool, Details detail,
+                  int id, Atlas.Region texture, String description, String name,
+                  String filename, Items[] requiredForBuild, Types type) {
         this.name = name;
         this.weapon = weapon;
         this.placeable = placeable;
@@ -87,7 +89,7 @@ public class Items implements Serializable {
         String bulletPath = assets.assetsDir(path);
         Weapons.Types type = Weapons.Types.valueOf((String) weapon.getOrDefault("Type", "BULLET"));
 
-        return new Items(new Weapons(fireRate, damage, ammoSpeed, reloadTime, bulletSpread, magazineSize, sound, bulletPath, type), (short) 0, null, null, id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.WEAPON);
+        return new Items(new Weapons(fireRate, damage, ammoSpeed, reloadTime, bulletSpread, magazineSize, sound, bulletPath, type), null, null, null, id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.WEAPON);
     }
 
     public static Items createTool(String fileName) {
@@ -101,16 +103,15 @@ public class Items implements Serializable {
         float secBetweenHits = Float.parseFloat((String) tool.getOrDefault("SecBetweenHits", "100"));
         float maxInteractionRange = Float.parseFloat((String) tool.getOrDefault("MaxInteractionRange", "8"));
 
-        return new Items(null, (short) 0, new Tools(maxHp, damage, secBetweenHits, maxInteractionRange), null, id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.TOOL);
+        return new Items(null, null, new Tools(maxHp, damage, secBetweenHits, maxInteractionRange), null, id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.TOOL);
     }
 
-    public static Items createPlaceable(short placeable) {
-        Properties detail = Config.getProperties(assets.assetsDir("/World/ItemsCharacteristics/" + StaticWorldObjects.getFileName(StaticWorldObjects.getId(placeable)) + ".properties"));
+    public static Items createPlaceable(StaticObjectsConst placeable) {
+        Properties detail = Config.getProperties(assets.assetsDir("/World/ItemsCharacteristics/" + placeable.originalFileName + ".properties"));
         DefaultValues defaultValues = getDefault(detail);
-        StaticObjectsConst placeableProp = StaticObjectsConst.getConst(StaticWorldObjects.getId(placeable));
-        int id = StaticWorldObjects.getId(placeable);
 
-        return new Items(null, placeable, null, null, id, placeableProp.texture, "", placeableProp.objectName, StaticWorldObjects.getFileName(placeable), defaultValues.requiredForBuild, Types.PLACEABLE);
+        return new Items(null, placeable, null, null, 0, placeable.texture, "",
+                placeable.objectName, placeable.originalFileName, defaultValues.requiredForBuild, Types.PLACEABLE);
     }
 
     public static Items createDetail(String fileName) {
@@ -119,7 +120,7 @@ public class Items implements Serializable {
         DefaultValues defaultValues = getDefault(detail);
         int id = fileName.hashCode();
 
-        return new Items(null, (short) 0, null, new Details(""), id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.DETAIL);
+        return new Items(null, null, null, new Details(""), id, defaultValues.texture(), defaultValues.description, defaultValues.name, fileName, defaultValues.requiredForBuild, Types.DETAIL);
     }
 
     public static Items createItem(String fileName) {
@@ -135,7 +136,7 @@ public class Items implements Serializable {
         return null;
     }
 
-    public static Items createItem(short placeable) {
+    public static Items createItem(StaticObjectsConst placeable) {
         return createPlaceable(placeable);
     }
 

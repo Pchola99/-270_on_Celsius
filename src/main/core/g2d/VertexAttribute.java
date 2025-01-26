@@ -6,15 +6,15 @@ public final class VertexAttribute {
     public final int size;
     public final Type type;
 
-    private final Interp interp;
+    private final Interpretation interp;
 
-    private VertexAttribute(int size, Type type, Interp interp) {
+    private VertexAttribute(int size, Type type, Interpretation interp) {
         this.size = size;
         this.type = type;
         this.interp = interp;
     }
 
-    public static VertexAttribute create(int size, Type type, Interp interp) {
+    public static VertexAttribute create(int size, Type type, Interpretation interp) {
         return new VertexAttribute(size, type, interp);
     }
 
@@ -31,7 +31,7 @@ public final class VertexAttribute {
         GL46.glDisableVertexAttribArray(index);
     }
 
-    public enum Interp {
+    public enum Interpretation {
         DIRECT_FLOAT {
             @Override
             void enable(int index, int size, int glType, int vertexByteSize, int offset) {

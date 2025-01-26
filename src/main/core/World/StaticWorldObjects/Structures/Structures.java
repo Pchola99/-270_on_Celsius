@@ -1,16 +1,13 @@
 package core.World.StaticWorldObjects.Structures;
 
-import core.EventHandling.Logging.Config;
 import core.EventHandling.Logging.Logger;
-import core.Global;
 import core.World.StaticWorldObjects.StaticObjectsConst;
 import core.World.StaticWorldObjects.StaticWorldObjects;
-import core.World.Textures.TextureDrawing;
-import core.g2d.Atlas;
+import core.entity.BaseBlockEntity;
+import core.entity.BlockEntity;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.zip.DeflaterOutputStream;
 import java.util.zip.InflaterInputStream;
 
@@ -43,8 +40,8 @@ public class Structures implements Serializable {
         structures.clear();
     }
 
-    public static short[][] bindStructures(String[][] blocks) {
-        short[][] bindedBlocks = new short[blocks.length][blocks[0].length];
+    public static StaticObjectsConst[][] bindStructures(String[][] blocks) {
+        StaticObjectsConst[][] bindedBlocks = new StaticObjectsConst[blocks.length][blocks[0].length];
 
         for (int x = 0; x < blocks.length; x++) {
             for (int y = 0; y < blocks[x].length; y++) {
@@ -92,7 +89,7 @@ public class Structures implements Serializable {
         Logger.log("End saving structure: " + structureName);
     }
 
-    public static void createStructure(String name, short[][] blocks) {
+    public static void createStructure(String name, BlockEntity[][] blocks) {
         if (blocks.length > 0) {
             int lowestSolidBlock = -1;
             String[][] names = new String[blocks.length][blocks[0].length];
@@ -113,43 +110,43 @@ public class Structures implements Serializable {
     }
 
     public static void bindStructure(String name, byte id) {
-        String path = assets.assetsDir("World/ItemsCharacteristics/" + name + ".properties");
-
-        byte maxHp;
-        short[][] blocks;
-
-        // if its simple structure (without .ser file)
-        if (new File(path).exists()) {
-            Properties prop = Config.getProperties(path);
-            Atlas.Region texture = Global.atlas.byPath((String) prop.get("Path"));
-            blocks = new short[texture.width() / TextureDrawing.blockSize][texture.height() / TextureDrawing.blockSize];
-
-            if (blocks.length > 1 || blocks[0].length > 1) {
-                maxHp = Byte.parseByte((String) prop.getOrDefault("MaxHp", "100"));
-
-                StaticObjectsConst rootConst = StaticObjectsConst.getConst(id);
-                StaticObjectsConst tailConst = rootConst.clone();
-
-                tailConst.optionalTiles = null;
-                tailConst.texture = null;
-                tailConst.hasMotherBlock = true;
-
-                for (int x = 0; x < blocks.length; x++) {
-                    for (int y = 0; y < blocks[0].length; y++) {
-                        byte tailId = StaticWorldObjects.generateId(name + "" + x + "" + y);
-                        blocks[x][y] = (short) (((maxHp & 0xFF) << 8) | (tailId & 0xFF));
-                        StaticObjectsConst.setConst(tailConst, tailId);
-                    }
-                }
-                rootConst.optionalTiles = blocks;
-                StaticObjectsConst.setConst(rootConst, id);
-            }
-        } else {
-            Structures str = getStructure(name);
-            if (str != null) {
-                blocks = bindStructures(str.blocks);
-                StaticObjectsConst.setConst(name, id, blocks);
-            }
-        }
+        // String path = assets.assetsDir("World/ItemsCharacteristics/" + name + ".properties");
+        //
+        // byte maxHp;
+        // short[][] blocks;
+        //
+        // // if its simple structure (without .ser file)
+        // if (new File(path).exists()) {
+        //     Properties prop = Config.getProperties(path);
+        //     Atlas.Region texture = Global.atlas.byPath((String) prop.get("Path"));
+        //     blocks = new short[texture.width() / TextureDrawing.blockSize][texture.height() / TextureDrawing.blockSize];
+        //
+        //     if (blocks.length > 1 || blocks[0].length > 1) {
+        //         maxHp = Byte.parseByte((String) prop.getOrDefault("MaxHp", "100"));
+        //
+        //         StaticObjectsConst rootConst = StaticObjectsConst.getConst(id);
+        //         StaticObjectsConst tailConst = rootConst.clone();
+        //
+        //         tailConst.optionalTiles = null;
+        //         tailConst.texture = null;
+        //         tailConst.hasMotherBlock = true;
+        //
+        //         for (int x = 0; x < blocks.length; x++) {
+        //             for (int y = 0; y < blocks[0].length; y++) {
+        //                 byte tailId = StaticWorldObjects.generateId(name + "" + x + "" + y);
+        //                 blocks[x][y] = (short) (((maxHp & 0xFF) << 8) | (tailId & 0xFF));
+        //                 StaticObjectsConst.setConst(tailConst, tailId);
+        //             }
+        //         }
+        //         rootConst.optionalTiles = blocks;
+        //         StaticObjectsConst.setConst(rootConst, id);
+        //     }
+        // } else {
+        //     Structures str = getStructure(name);
+        //     if (str != null) {
+        //         blocks = bindStructures(str.blocks);
+        //         StaticObjectsConst.setConst(name, id, blocks);
+        //     }
+        // }
     }
 }

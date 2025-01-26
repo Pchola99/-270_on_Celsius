@@ -186,18 +186,18 @@ public class BuildMenu {
     private static void drawRequirements(float x, float y) {
         if (currentObject != null && items[currentObject.x][currentObject.y] != null) {
             Items item = items[currentObject.x][currentObject.y];
-            Factories factory = Factories.getFactoryConst(StaticWorldObjects.getFileName(item.placeable));
+            // Factories factory = Factories.getFactoryConst((item.placeable).originalFileName);
 
             drawText((int) x, (int) (y + 130), item.name);
 
-            if (factory != null) {
-                if (factory.inputObjects != null) {
-                    Factories.drawObjects(x, y + 82, factory.inputObjects, atlas.byPath("UI/GUI/buildMenu/factoryIn.png"));
-                }
-                if (factory.outputObjects != null) {
-                    Factories.drawObjects(x, y + 41, factory.outputObjects, atlas.byPath("UI/GUI/buildMenu/factoryOut.png"));
-                }
-            }
+            // if (factory != null) {
+            //     if (factory.inputObjects != null) {
+            //         Factories.drawObjects(x, y + 82, factory.inputObjects, atlas.byPath("UI/GUI/buildMenu/factoryIn.png"));
+            //     }
+            //     if (factory.outputObjects != null) {
+            //         Factories.drawObjects(x, y + 41, factory.outputObjects, atlas.byPath("UI/GUI/buildMenu/factoryOut.png"));
+            //     }
+            // }
             if (item.requiredForBuild != null) {
                 Factories.drawObjects(x, y, item.requiredForBuild, atlas.byPath("UI/GUI/buildMenu/build.png"));
             }
